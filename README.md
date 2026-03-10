@@ -13,6 +13,8 @@ If you encounter any bugs while using the scripts, please open an issue.
 
 Just [download](https://github.com/BorisChen396/OWServerBlocker/archive/refs/heads/master.zip) and extract this repository, then run the `OWServerBlocker.bat` script.
 
+***Note:*** **DO NOT** select the wrong executable file. The `.exe` file of main game should be `Overwatch.exe` (`...\Overwatch\_retail_\Overwatch.exe` if you are using Battle.net), not `Overwatch Launcher.exe`.
+
 > ### Note
 > **DO NOT** close the command window while the script is running, as this will immediately terminate the script. The command window will close automatically when you close the selection window.
 
