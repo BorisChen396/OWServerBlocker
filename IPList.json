@@ -1,0 +1,135 @@
+[
+    {
+        "name": "gue4",
+        "friendly_name": "U.S. East (GCP)",
+        "gcp_scope": "us-east4"
+    },
+    {
+        "name": "gtk1",
+        "friendly_name": "Japan (GCP)",
+        "gcp_scope": "asia-northeast1"
+    },
+    {
+        "name": "gsg1",
+        "friendly_name": "Singapore (GCP)",
+        "gcp_scope": "asia-southeast1"
+    },
+    {
+        "name": "gmec2",
+        "friendly_name": "Saudi Arabia (GCP)",
+        "gcp_scope": "me-central2"
+    },
+    {
+        "name": "gbr1",
+        "friendly_name": "Brazil (GCP)",
+        "gcp_scope": "southamerica-east1"
+    },
+    {
+        "name": "gen1",
+        "friendly_name": "Finland (GCP)",
+        "gcp_scope": "europe-north1"
+    },
+    {
+        "name": "tpe1",
+        "friendly_name": "Taiwan",
+        "cidr": [
+            "5.42.160.0/21"
+        ]
+    },
+    {
+        "name": "ord1",
+        "friendly_name": "U.S. Central",
+        "cidr": [
+            "24.105.40.0/21",
+            "137.221.69.0/24",
+            "137.221.72.0/24",
+            "137.221.74.0/24",
+            "137.221.75.0/24"
+        ]
+    },
+    {
+        "name": "las1",
+        "friendly_name": "U.S. West",
+        "cidr": [
+            "64.224.24.0/23",
+            "137.221.68.0/24",
+            "137.221.70.0/24",
+            "137.221.73.0/24"
+        ]
+    },
+    {
+        "name": "ams1",
+        "friendly_name": "Netherlands",
+        "cidr": [
+            "64.224.26.0/23",
+            "137.221.78.0/24"
+        ]
+    },
+    {
+        "name": "icn1",
+        "friendly_name": "South Korea",
+        "cidr": [
+            "121.254.128.0/17",
+            "137.221.84.0/24",
+            "117.52.0.0/16"
+        ]
+    },
+    {
+        "name": "syd2",
+        "friendly_name": "Australia",
+        "cidr": [
+            "137.221.85.0/24",
+            "158.115.196.0/23"
+        ]
+    },
+    {
+        "name": "france",
+        "friendly_name": "France",
+        "cidr": [
+            "137.221.77.0/24"
+        ]
+    },      
+    {
+        "name": "us-east",
+        "friendly_name": "U.S. East",
+        "cidr": [
+            "137.221.72.0/24",
+            "137.221.76.0/24"
+        ]
+    },
+    {
+        "name": "england",
+        "friendly_name": "United Kingdom",
+        "cidr": [
+            "137.221.79.0/24"
+        ]
+    },
+    {
+        "name": "germany",
+        "friendly_name": "Germany",
+        "cidr": [
+            "137.221.80.0/24"
+        ]
+    },
+    {
+        "name": "italy",
+        "friendly_name": "Italy",
+        "cidr": [
+            "137.221.82.0/24"
+        ]
+    },
+    {
+        "name": "sweden",
+        "friendly_name": "Sweden",
+        "cidr": [
+            "137.221.86.0/24"
+        ]
+    },
+    {
+        "name": "spain",
+        "friendly_name": "Spain",
+        "cidr": [
+            "137.221.88.0/24"
+        ]
+    }
+]
