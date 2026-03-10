@@ -1,7 +1,7 @@
 # Disclaimer
 
-> ### IMPORTANT!
-> This project is not affiliated with or endorsed by Blizzard Entertainment.
+## IMPORTANT!
+***This project is not affiliated with or endorsed by Blizzard Entertainment.***
 
 Please use the scripts and methods in this repository responsibly.
 
@@ -15,8 +15,7 @@ Just [download](https://github.com/BorisChen396/OWServerBlocker/archive/refs/hea
 
 ***Note:*** **DO NOT** select the wrong executable file. The `.exe` file of main game should be `Overwatch.exe` (`...\Overwatch\_retail_\Overwatch.exe` if you are using Battle.net), not `Overwatch Launcher.exe`.
 
-> ### Note
-> **DO NOT** close the command window while the script is running, as this will immediately terminate the script. The command window will close automatically when you close the selection window.
+***Note:*** **DO NOT** close the command window while the script is running, as this will immediately terminate the script. The command window will close automatically when you close the selection window.
 
 You can also run the `CreateShortcut.bat` script to create a shortcut.
 
