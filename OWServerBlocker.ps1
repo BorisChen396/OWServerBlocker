@@ -10,6 +10,24 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
+# Enable high DPI awareness
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+
+public class DPIAwareness {
+    [DllImport("user32.dll")]
+    public static extern bool SetProcessDpiAwarenessContext(IntPtr dpiContext);
+
+    public static void Enable() {
+        // DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2
+        IntPtr context = new IntPtr(-4);
+        SetProcessDpiAwarenessContext(context);
+    }
+}
+"@
+[DPIAwareness]::Enable()
+
 [System.Windows.Forms.Application]::EnableVisualStyles()
 
 # Check if .game_path exists

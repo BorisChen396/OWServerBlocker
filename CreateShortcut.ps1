@@ -5,6 +5,7 @@ $saveFileDialog = New-Object System.Windows.Forms.SaveFileDialog
 $saveFileDialog.Filter = "Shortcut (*.lnk)|*.lnk" # Sets file type filters
 $saveFileDialog.Title = "Select a location to save the shortcut" # Sets the dialog box title
 $saveFileDialog.OverwritePrompt = $true # Asks for confirmation if the file already exists
+$saveFileDialog.InitialDirectory = "${Env:USERPROFILE}\Desktop"
 
 # Show the dialog and capture the result
 $result = $saveFileDialog.ShowDialog()
@@ -25,9 +26,9 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
     $bytes = [System.IO.File]::ReadAllBytes($filePath)
     $bytes[0x15] = $bytes[0x15] -bor 0x20 
     [System.IO.File]::WriteAllBytes($filePath, $bytes)
-
-    Read-Host -Prompt "Press ENTER to exit..."
 }
 else {
     Write-Host "Save operation cancelled by user."
 }
+
+Read-Host -Prompt "Press ENTER to exit..."
