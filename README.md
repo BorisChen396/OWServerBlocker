@@ -19,6 +19,8 @@ Just [download](https://github.com/BorisChen396/OWServerBlocker/archive/refs/hea
 
 You can also run the `CreateShortcut.bat` script to create a shortcut.
 
+***Note:*** You will need to restart Overwatch after blocking the servers.
+
 # The window looks blurry!
 
 That's because you are using the built-in PowerShell 5 to execute the script. HiDPI awareness is enabled only when running under PowerShell 7 or later. PowerShell 5 does not properly support WinForms HiDPI scaling and always reports a fixed DPI of 96, which makes the UI appear extremely small on high-resolution displays. Therefore, HiDPI support is disabled on PowerShell 5 so Windows can apply DPI virtualization instead. This may make the window appear slightly blurry, but keeps the interface usable on HiDPI screens.
