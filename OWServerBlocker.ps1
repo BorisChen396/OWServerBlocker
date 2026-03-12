@@ -1,20 +1,25 @@
 $GamePathFile = "${PSScriptRoot}\.gamepath"
 $WindowTitle = "Overwatch Server Blocker"
 
-# Check for Admin rights and relaunch with 'RunAs' if needed
-if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Start-Process -FilePath ([System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName) `
-            -ArgumentList @("-NoProfile", "-File", "`"$PSCommandPath`"") `
-            -Verb RunAs
-    return
+# Relaunch check
+$RelaunchProcess = & {
+    $IsPrivileged = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    $ShellExecutable = & {
+        if ($PSVersionTable.PSVersion.Major -lt 7 -and (Get-Command -Name "pwsh.exe")) {
+            (Get-Command -Name "pwsh.exe").Source
+        }
+    }
+    if (-not $IsPrivileged -or $ShellExecutable) {
+        if (-not $ShellExecutable) {
+            $ShellExecutable = [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
+        }
+        Start-Process -FilePath "$ShellExecutable" `
+                -ArgumentList @("-File", "`"$PSCommandPath`"") `
+                -Verb RunAs
+        return $true
+    }
 }
-
-# Check for PowerShell 7 and relaunch if needed
-if ($PSVersionTable.PSVersion.Major -lt 7 -and (Get-Command -Name "pwsh.exe")) {
-    Start-Process -FilePath (Get-Command -Name "pwsh.exe").Source `
-            -ArgumentList @("-NoProfile", "-File", "`"$PSCommandPath`"")
-    return
-}
+if ($RelaunchProcess) { return }
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -158,6 +163,7 @@ $panel.Controls.Add([System.Windows.Forms.Label] @{
 # Add "Select All" CheckBox
 $selectAll = [System.Windows.Forms.CheckBox] @{
     Text = "Select All"
+    AutoSize = $true
 }
 $panel.Controls.Add($selectAll)
 
