@@ -3,31 +3,35 @@ $WindowTitle = "Overwatch Server Blocker"
 
 # Check for Admin rights and relaunch with 'RunAs' if needed
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Start-Process -FilePath "powershell.exe" -ArgumentList @("-NoProfile", "-File", "`"$PSCommandPath`"") -Verb RunAs
+    Start-Process -FilePath ([System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName) `
+            -ArgumentList @("-NoProfile", "-File", "`"$PSCommandPath`"") `
+            -Verb RunAs
+    return
+}
+
+# Check for PowerShell 7 and relaunch if needed
+if ($PSVersionTable.PSVersion.Major -lt 7 -and (Get-Command -Name "pwsh.exe")) {
+    Start-Process -FilePath (Get-Command -Name "pwsh.exe").Source `
+            -ArgumentList @("-NoProfile", "-File", "`"$PSCommandPath`"")
     return
 }
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
-# Enable high DPI awareness
-Add-Type -TypeDefinition @"
-using System;
+# Enable high DPI awareness on PowerShell 7+
+# The reason for applying this to PowerShell 7+ only but not 5 is PowerShell 5 DOES NOT support automatic HiDPI scaling. The form will be set to 96 DPI and looks really small on HiDPI displays with PowerShell 5.
+# To prevent this, enable HiDPI support only when the script is executed with PowerShell 7+.
+if ($PSVersionTable.PSVersion.Major -ge 7) {
+    Add-Type -TypeDefinition @'
 using System.Runtime.InteropServices;
-
-public class DPIAwareness {
-    [DllImport("user32.dll")]
-    public static extern bool SetProcessDpiAwarenessContext(IntPtr dpiContext);
-
-    public static void Enable() {
-        // DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2
-        IntPtr context = new IntPtr(-4);
-        SetProcessDpiAwarenessContext(context);
-    }
+public class ProcessDPI {
+    [DllImport("user32.dll", SetLastError=true)]
+    public static extern bool SetProcessDPIAware();
 }
-"@
-[DPIAwareness]::Enable()
-
+'@
+    [ProcessDPI]::SetProcessDPIAware() | Out-Null
+}
 [System.Windows.Forms.Application]::EnableVisualStyles()
 
 # Check if .game_path exists
@@ -116,12 +120,13 @@ if (-not $?) {
 }
 
 # Create the Form
-$form = New-Object System.Windows.Forms.Form
-$form.Text = $WindowTitle
-$form.AutoSize = $true
-$form.AutoSizeMode = [System.Windows.Forms.AutoSizeMode]::GrowAndShrink
-$form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedDialog
-$form.MaximizeBox = $false
+$form = [System.Windows.Forms.Form] @{
+    Text = $WindowTitle
+    AutoSize = $true
+    AutoSizeMode = [System.Windows.Forms.AutoSizeMode]::GrowAndShrink
+    MaximizeBox = $false
+    StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
+}
 $form.Add_FormClosing({
     param($evSender, $e)
 
@@ -138,32 +143,34 @@ $form.Add_FormClosing({
 })
 
 # Create a Flow Layout Panel to handle positioning automatically
-$panel = New-Object System.Windows.Forms.FlowLayoutPanel
-$panel.AutoSize = $true
-$panel.FlowDirection = [System.Windows.Forms.FlowDirection]::TopDown
+$panel = [System.Windows.Forms.FlowLayoutPanel] @{
+    AutoSize = $true
+    FlowDirection = [System.Windows.Forms.FlowDirection]::TopDown
+}
 $form.Controls.Add($panel)
 
 # Add description Label
-$descriptionText = New-Object System.Windows.Forms.Label
-$descriptionText.Text = "Select the server(s) you want to block:"
-$descriptionText.AutoSize = $true
-$panel.Controls.Add($descriptionText)
+$panel.Controls.Add([System.Windows.Forms.Label] @{
+    Text = "Select the server(s) you want to block:"
+    AutoSize = $true
+})
 
 # Add "Select All" CheckBox
-$selectAll = New-Object System.Windows.Forms.CheckBox
-$selectAll.Text = "Select All"
-$selectAll.AutoSize = $true
+$selectAll = [System.Windows.Forms.CheckBox] @{
+    Text = "Select All"
+}
 $panel.Controls.Add($selectAll)
 
 # Add CheckedListBox
-$clb = New-Object System.Windows.Forms.CheckedListBox
-$clb.CheckOnClick = $true
-$clb.Width = 250
-$clb.Height = 200
-$clb.DataSource = $ServerList
-$clb.DisplayMember = "FriendlyName"
-$clb.ValueMember = "Name"
-$clb.Sorted = $true
+$clb = [System.Windows.Forms.CheckedListBox] @{
+    Width = 250 * ($form.DeviceDpi / 96)
+    Height = 200 * ($form.DeviceDpi / 96)
+    DataSource = $ServerList
+    DisplayMember = "FriendlyName"
+    ValueMember = "Name"
+    Sorted = $true
+    CheckOnClick = $true
+}
 $panel.Controls.Add($clb)
 
 # Logic: Select All toggle
@@ -174,20 +181,27 @@ $selectAll.Add_CheckedChanged({
 })
 
 # Button Container (Horizontal layout for buttons)
-$buttonPanel = New-Object System.Windows.Forms.FlowLayoutPanel
-$buttonPanel.AutoSize = $true
-$buttonPanel.Anchor = [System.Windows.Forms.AnchorStyles]::Right
+$buttonPanel = [System.Windows.Forms.FlowLayoutPanel] @{
+    AutoSize = $true
+    Anchor = [System.Windows.Forms.AnchorStyles]::Right
+}
 $panel.Controls.Add($buttonPanel)
 
 # Block Button
-$blockButton = New-Object System.Windows.Forms.Button
-$blockButton.Text = "Block"
+$blockButton = [System.Windows.Forms.Button] @{
+    Text = "Block"
+    Width = 100 * ($form.DeviceDpi / 96)
+    Height = 30 * ($form.DeviceDpi / 96)
+}
 $buttonPanel.Controls.Add($blockButton)
 
 # Unblock Button
-$unblockButton = New-Object System.Windows.Forms.Button
-$unblockButton.Text = "Unblock"
-$unblockButton.Enabled = $false
+$unblockButton = [System.Windows.Forms.Button] @{
+    Text = "Unblock"
+    Width = 100 * ($form.DeviceDpi / 96)
+    Height = 30 * ($form.DeviceDpi / 96)
+    Enabled = $false
+}
 $buttonPanel.Controls.Add($unblockButton)
 
 # Buttons logic
@@ -238,5 +252,4 @@ $unblockButton.Add_Click({
 })
 
 # Show the Form
-$form.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen;
-$form.ShowDialog()
+[System.Windows.Forms.Application]::Run($form)

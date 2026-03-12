@@ -19,6 +19,12 @@ Just [download](https://github.com/BorisChen396/OWServerBlocker/archive/refs/hea
 
 You can also run the `CreateShortcut.bat` script to create a shortcut.
 
+# The window looks blurry!
+
+That's because you are using the built-in PowerShell 5 to execute the script. HiDPI awareness is enabled only when running under PowerShell 7 or later. PowerShell 5 does not properly support WinForms HiDPI scaling and always reports a fixed DPI of 96, which makes the UI appear extremely small on high-resolution displays. Therefore, HiDPI support is disabled on PowerShell 5 so Windows can apply DPI virtualization instead. This may make the window appear slightly blurry, but keeps the interface usable on HiDPI screens.
+
+If you want the window to be properly scaled on high-resolution displays, you can [install PowerShell 7](https://learn.microsoft.com/en-us/powershell/scripting/install/install-powershell-on-windows).
+
 # How does it work?
 
 The script reads the contents of `IPList.json` and generates Windows Firewall rules based on the data. A brief explanation of how to create the `IPList.json` file will be provided later.
