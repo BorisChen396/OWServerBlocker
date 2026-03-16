@@ -1,25 +1,33 @@
+param(
+    [switch] $PreferPS5,
+    [switch] $CreateShortcut
+)
+
 $GamePathFile = "${PSScriptRoot}\.gamepath"
 $WindowTitle = "Overwatch Server Blocker"
 
 # Relaunch check
-$RelaunchProcess = & {
-    $IsPrivileged = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-    $ShellExecutable = & {
-        if ($PSVersionTable.PSVersion.Major -lt 7 -and (Get-Command -Name "pwsh.exe")) {
-            (Get-Command -Name "pwsh.exe").Source
-        }
+$ShellExecutable = & {
+    if ($PreferPS5) {
+        (Get-Command -Name "powershell.exe").Source
     }
-    if (-not $IsPrivileged -or $ShellExecutable) {
-        if (-not $ShellExecutable) {
-            $ShellExecutable = [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
-        }
-        Start-Process -FilePath "$ShellExecutable" `
-                -ArgumentList @("-File", "`"$PSCommandPath`"") `
-                -Verb RunAs
-        return $true
+    elseif ($PSVersionTable.PSVersion.Major -lt 7 -and (Get-Command -Name "pwsh.exe")) {
+        (Get-Command -Name "pwsh.exe").Source
     }
 }
-if ($RelaunchProcess) { return }
+if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) -or $ShellExecutable) {
+    if (-not $ShellExecutable) {
+        $ShellExecutable = [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
+    }
+    $boundParams = $PSBoundParameters.GetEnumerator() | ForEach-Object -Process {
+        "-$($_.Key)", "'$([System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($_.Value))'"
+    }
+    $argList = @("-ExecutionPolicy", "Unrestricted", "-File", "`"$PSCommandPath`"") + $boundParams
+    Start-Process -FilePath "$ShellExecutable" `
+            -ArgumentList $argList `
+            -Verb RunAs
+    return
+}
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -38,6 +46,53 @@ public class ProcessDPI {
     [ProcessDPI]::SetProcessDPIAware() | Out-Null
 }
 [System.Windows.Forms.Application]::EnableVisualStyles()
+
+# Handle Create Shortcut logic
+if ($CreateShortcut) {
+    $saveFileDialog = [System.Windows.Forms.SaveFileDialog] @{
+        Title = "Select a location to save the shortcut" # Sets the dialog box title
+        OverwritePrompt = $true # Asks for confirmation if the file already exists
+        InitialDirectory = "${Env:USERPROFILE}\Desktop"
+        FileName = "$WindowTitle.lnk"
+        Filter = "Shortcut (*.lnk)|*.lnk" # Sets file type filters
+    }
+
+    # Show the dialog and capture the result
+    $result = $saveFileDialog.ShowDialog()
+
+    # Process the user's choice
+    if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
+        $filePath = $saveFileDialog.FileName
+
+        if (Test-Path -Path $filePath -PathType Leaf) { Remove-Item -Path $filePath }
+
+        $ShortcutFile = (New-Object -COM WScript.Shell).CreateShortcut($filePath)
+        $ShortcutFile.TargetPath = "powershell.exe"
+        $ShortcutFile.Arguments = "-ExecutionPolicy Unrestricted -File `"${PSScriptRoot}\OWServerBlocker.ps1`""
+        $ShortcutFile.Save()
+
+        # Modify the binary data to enable "Run as administrator"
+        $bytes = [System.IO.File]::ReadAllBytes($filePath)
+        $bytes[0x15] = $bytes[0x15] -bor 0x20 
+        [System.IO.File]::WriteAllBytes($filePath, $bytes)
+
+        [System.Windows.Forms.MessageBox]::Show(
+            "Shortcut created successfully! You can use this shortcut to launch the blocker directly without going through the file selection and admin prompt steps.`n`nNote: The shortcut is set to run as administrator by default, so you will still see the UAC prompt when launching it.",
+            "Shortcut Created",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Information
+        ) | Out-Null
+    }
+    else {
+        [System.Windows.Forms.MessageBox]::Show(
+            "No file was selected. The shortcut creation has been cancelled.",
+            "Operation Cancelled",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Information
+        ) | Out-Null
+    }
+    return
+}
 
 # Check if .game_path exists
 if (Test-Path -PathType Leaf -Path "$GamePathFile") {
@@ -61,12 +116,12 @@ else {
 
 # Check if .gamepath's content is a valid path
 if (-not (Test-Path -PathType Leaf -Path "$GamePath")) {
-    [void] [System.Windows.Forms.MessageBox]::Show(
+    [System.Windows.Forms.MessageBox]::Show(
         "You've selected an invalid Overwatch.exe path. Please remove `"${GamePathFile}`" and select the correct executable file.",
         "Invalid game path",
         [System.Windows.Forms.MessageBoxButtons]::OK,
         [System.Windows.Forms.MessageBoxIcon]::Error
-    )
+    ) | Out-Null
     return
 }
 
@@ -80,10 +135,10 @@ if (Get-NetFirewallRule | Where-Object -Property "DisplayName" -Like -Value "$Wi
         [System.Windows.Forms.MessageBoxIcon]::Question
     ) -eq [System.Windows.Forms.DialogResult]::Yes) {
         & "wf.msc"
-        [void] [System.Windows.Forms.MessageBox]::Show(
+        [System.Windows.Forms.MessageBox]::Show(
             "To remove the stale rules, go to [Outbound Rules] > Select all the stale rules > [Delete].",
             "Remove stale firewall rules"
-        )
+        ) | Out-Null
     }
 }
 
@@ -115,12 +170,12 @@ $ServerList = [System.Collections.Generic.List[ServerItem]] @()
     })
 }
 if (-not $?) {
-    [void] [System.Windows.Forms.MessageBox]::Show(
+    [System.Windows.Forms.MessageBox]::Show(
         "Make sure `"${PSScriptRoot}\IPList.json`" exists and the system is connected to Internet.",
         "Failed to load IP list",
         [System.Windows.Forms.MessageBoxButtons]::OK,
         [System.Windows.Forms.MessageBoxIcon]::Error
-    )
+    ) | Out-Null
     return
 }
 
@@ -225,10 +280,10 @@ $blockButton.Add_Click({
             }
         }
         if ($failedItems) {
-            [void] [System.Windows.Forms.MessageBox]::Show("Failed to create the firewall rules for the following regions: $($failedItems -join '')", "$FormTitle", "OK", "Error")
+            [System.Windows.Forms.MessageBox]::Show("Failed to create the firewall rules for the following regions: $($failedItems -join '')", "$FormTitle", "OK", "Error") | Out-Null
         }
         else {
-            [void] [System.Windows.Forms.MessageBox]::Show("Successfully blocked $($BlockedRules.Count) server(s).")
+            [System.Windows.Forms.MessageBox]::Show("Successfully blocked $($BlockedRules.Count) server(s).") | Out-Null
         }
 
         $selectAll.Enabled = $false
@@ -249,7 +304,7 @@ $unblockButton.Add_Click({
         $unblockButton.Enabled = $true
     }
     else {
-        [void] [System.Windows.Forms.MessageBox]::Show("Successfully removed all blocking rule(s).")
+        [System.Windows.Forms.MessageBox]::Show("Successfully removed all blocking rule(s).") | Out-Null
 
         $selectAll.Enabled = $true
         $clb.Enabled = $true
